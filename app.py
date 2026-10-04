@@ -32,6 +32,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any
+from huggingface_hub import hf_hub_download
 
 # Hugging Face ZeroGPU integration.
 # The real package is available in the Space environment.
@@ -56,7 +57,15 @@ import gradio as gr
 
 ROOT = Path(__file__).resolve().parent
 
-CHECKPOINT = ROOT / "models" / "best.pth"
+MODEL_REPO_ID = "Bhuwan-24/GeoSculpt-weights"
+MODEL_FILENAME = "best.pth"
+
+CHECKPOINT = Path(
+    hf_hub_download(
+        repo_id=MODEL_REPO_ID,
+        filename=MODEL_FILENAME,
+    )
+)
 EXTERNAL_MODEL_DIR = ROOT / "external" / "Depth-Anything-V2"
 GEOID_GRID = ROOT / "data" / "geoids" / "es_ign_EGM08_REDNAP.tif"
 FABDEM_CACHE = ROOT / "data" / "dem_cache" / "fabdem"
@@ -409,9 +418,9 @@ def run_geosculpt(
 
     if not CHECKPOINT.exists():
         raise gr.Error(
-            f"Checkpoint not found at {CHECKPOINT}. "
-            "Upload models/best.pth to the Space repository."
-        )
+        f"GeoSculpt checkpoint could not be downloaded from "
+        f"{MODEL_REPO_ID}."
+    )
 
     if not EXTERNAL_MODEL_DIR.exists():
         raise gr.Error(
