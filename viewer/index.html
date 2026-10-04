@@ -1,0 +1,4177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>GeoSculpt 3D Viewer</title>
+
+
+    <style>
+
+        html,
+        body {
+
+            margin: 0;
+
+            width: 100%;
+            height: 100%;
+
+            overflow: hidden;
+
+            background: #34373c;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+        }
+
+
+        #viewer {
+
+            position: fixed;
+
+            inset: 0;
+
+            width: 100%;
+            height: 100%;
+
+        }
+
+
+        /* =====================================================
+           HUD
+        ===================================================== */
+
+        #hud {
+
+            position: fixed;
+
+            top: 14px;
+            left: 14px;
+
+            z-index: 20;
+
+            width: 350px;
+
+            max-height:
+                calc(100vh - 28px);
+
+            overflow-y: auto;
+
+            box-sizing: border-box;
+
+            padding: 16px;
+
+            background:
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.84
+                );
+
+            color: white;
+
+            border-radius: 10px;
+
+            backdrop-filter:
+                blur(8px);
+
+            font-size: 13px;
+
+            line-height: 1.45;
+
+        }
+
+
+        #hud h2 {
+
+            margin: 0;
+
+            font-size: 20px;
+
+        }
+
+
+        #subtitle {
+
+            color: #aaa;
+
+            font-size: 12px;
+
+            margin:
+                2px
+                0
+                12px
+                0;
+
+        }
+
+
+        .info-row {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            gap: 10px;
+
+            margin:
+                3px
+                0;
+
+        }
+
+
+        .info-label {
+
+            color: #aaa;
+
+        }
+
+
+        .info-value {
+
+            font-weight: 700;
+
+            text-align: right;
+
+        }
+
+
+        .section {
+
+            margin-top: 14px;
+
+            padding-top: 11px;
+
+            border-top:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.12
+                );
+
+        }
+
+
+        .section-title {
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            color: #ddd;
+
+            margin-bottom: 8px;
+
+        }
+
+
+        /* =====================================================
+           Buttons
+        ===================================================== */
+
+        .button-row {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 7px;
+
+        }
+
+
+        button {
+
+            border: none;
+
+            border-radius: 6px;
+
+            padding:
+                8px
+                11px;
+
+            cursor: pointer;
+
+            font-weight: 700;
+
+            background: #f2f2f2;
+
+            color: #151515;
+
+        }
+
+
+        button:hover {
+
+            filter:
+                brightness(1.08);
+
+        }
+
+
+        .mode-active {
+
+            outline:
+                2px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.9
+                );
+
+        }
+
+
+        /* =====================================================
+           Sliders
+        ===================================================== */
+
+        .slider-row {
+
+            display: grid;
+
+            grid-template-columns:
+                55px
+                1fr
+                75px;
+
+            gap: 8px;
+
+            align-items: center;
+
+            margin:
+                8px
+                0;
+
+        }
+
+
+        .slider-row label {
+
+            font-weight: 700;
+
+        }
+
+
+        input[type="range"] {
+
+            width: 100%;
+
+            cursor: pointer;
+
+        }
+
+
+        .slider-value {
+
+            text-align: right;
+
+            font-variant-numeric:
+                tabular-nums;
+
+        }
+
+
+        #surfaceInfo {
+
+            margin-top: 8px;
+
+            color: #999;
+
+            font-size: 11px;
+
+            line-height: 1.4;
+
+        }
+
+
+        #flyHint {
+
+            margin-top: 8px;
+
+            color: #999;
+
+            font-size: 11px;
+
+        }
+
+
+        #status {
+
+            margin-top: 10px;
+
+            color: #aaa;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =====================================================
+           Bottom bar
+        ===================================================== */
+
+        #instructions {
+
+            position: fixed;
+
+            left: 50%;
+
+            bottom: 14px;
+
+            transform:
+                translateX(-50%);
+
+            z-index: 20;
+
+            padding:
+                9px
+                14px;
+
+            background:
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.76
+                );
+
+            color: white;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+
+        }
+
+
+        /* =====================================================
+           Error
+        ===================================================== */
+
+        #error {
+
+            display: none;
+
+            position: fixed;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(
+                    -50%,
+                    -50%
+                );
+
+            z-index: 100;
+
+            width:
+                min(
+                    760px,
+                    calc(100vw - 40px)
+                );
+
+            box-sizing: border-box;
+
+            padding: 20px;
+
+            background: #250d0d;
+
+            color: white;
+
+            border:
+                1px solid
+                #a33;
+
+            border-radius: 10px;
+
+            white-space: pre-wrap;
+
+            font-family:
+                Consolas,
+                monospace;
+
+            font-size: 13px;
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div id="viewer"></div>
+
+
+<!-- =========================================================
+     HUD
+========================================================= -->
+
+<div id="hud">
+
+    <h2>
+        GeoSculpt 3D
+    </h2>
+
+
+    <div id="subtitle">
+        Reference-style reconstruction viewer
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Mode
+        </span>
+
+        <span
+            class="info-value"
+            id="mode"
+        >
+            Surface
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Geometry
+        </span>
+
+        <span
+            class="info-value"
+            id="geometryType"
+        >
+            Loading
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Points
+        </span>
+
+        <span
+            class="info-value"
+            id="pointCount"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Surface vertices
+        </span>
+
+        <span
+            class="info-value"
+            id="meshVertexCount"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Surface triangles
+        </span>
+
+        <span
+            class="info-value"
+            id="meshTriangleCount"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Height
+        </span>
+
+        <span
+            class="info-value"
+            id="heightRange"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            Pixel size
+        </span>
+
+        <span
+            class="info-value"
+            id="pixelSize"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <div class="info-row">
+
+        <span class="info-label">
+            CRS
+        </span>
+
+        <span
+            class="info-value"
+            id="crs"
+        >
+            -
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         Geometry mode
+    ====================================================== -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Geometry
+        </div>
+
+
+        <div class="button-row">
+
+            <button
+                id="surfaceButton"
+                class="mode-active"
+            >
+                Surface
+            </button>
+
+
+            <button id="pointButton">
+                Point Cloud
+            </button>
+
+        </div>
+
+
+        <div id="surfaceInfo">
+
+            Surface mode is constructed from the exact same
+            reference vertices as the point cloud. Both views
+            therefore use identical spatial orientation.
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         Reference reconstruction
+    ====================================================== -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Reference Reconstruction
+        </div>
+
+
+        <div class="slider-row">
+
+            <label for="dh">
+                DH
+            </label>
+
+
+            <input
+                id="dh"
+                type="range"
+                min="-256"
+                max="256"
+                step="1"
+                value="0"
+            >
+
+
+            <div
+                class="slider-value"
+                id="dhValue"
+            >
+                0 px
+            </div>
+
+        </div>
+
+
+        <div class="slider-row">
+
+            <label for="dw">
+                DW
+            </label>
+
+
+            <input
+                id="dw"
+                type="range"
+                min="-256"
+                max="256"
+                step="1"
+                value="0"
+            >
+
+
+            <div
+                class="slider-value"
+                id="dwValue"
+            >
+                0 px
+            </div>
+
+        </div>
+
+
+        <div class="slider-row">
+
+            <label for="maxZ">
+                Max Z
+            </label>
+
+
+            <input
+                id="maxZ"
+                type="range"
+                min="1"
+                max="256"
+                step="1"
+                value="100"
+            >
+
+
+            <div
+                class="slider-value"
+                id="maxZValue"
+            >
+                100 m
+            </div>
+
+        </div>
+
+
+        <div class="info-row">
+
+            <span class="info-label">
+                kx
+            </span>
+
+            <span
+                class="info-value"
+                id="kxValue"
+            >
+                0.0000
+            </span>
+
+        </div>
+
+
+        <div class="info-row">
+
+            <span class="info-label">
+                ky
+            </span>
+
+            <span
+                class="info-value"
+                id="kyValue"
+            >
+                0.0000
+            </span>
+
+        </div>
+
+
+        <div class="button-row">
+
+            <button id="resetTransform">
+                Reset Transform
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         Display
+    ====================================================== -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Display
+        </div>
+
+
+        <div class="button-row">
+
+            <button id="gridToggle">
+                Grid: ON
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         Navigation
+    ====================================================== -->
+
+    <div class="section">
+
+        <div class="section-title">
+            Navigation
+        </div>
+
+
+        <div class="button-row">
+
+            <button id="enterFly">
+                Enter Fly Mode
+            </button>
+
+
+            <button id="resetView">
+                Reset Camera
+            </button>
+
+        </div>
+
+
+        <div id="flyHint">
+
+            WASD = move |
+            mouse = look |
+            Space = up |
+            Ctrl = down |
+            Shift = fast |
+            Esc = Orbit
+
+        </div>
+
+    </div>
+
+
+    <div id="status">
+        Loading...
+    </div>
+
+</div>
+
+
+<div id="instructions">
+
+    Surface and Point Cloud share the exact same coordinates
+    |
+    DH / DW = reference unscrew
+    |
+    Max Z = vertical scale
+
+</div>
+
+
+<div id="error"></div>
+
+
+
+<!-- =========================================================
+     Three.js
+========================================================= -->
+
+<script type="importmap">
+
+{
+    "imports": {
+
+        "three":
+            "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+
+        "three/addons/":
+            "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+
+    }
+}
+
+</script>
+
+
+
+<script type="module">
+
+
+import * as THREE
+    from "three";
+
+
+import {
+    PLYLoader
+}
+from
+"three/addons/loaders/PLYLoader.js";
+
+
+import {
+    OrbitControls
+}
+from
+"three/addons/controls/OrbitControls.js";
+
+
+import {
+    PointerLockControls
+}
+from
+"three/addons/controls/PointerLockControls.js";
+
+
+
+/* ============================================================
+   Paths
+============================================================ */
+
+
+const BASE_PATH =
+    "../outputs/runs/check_mode2_georef_native/reconstruction3d";
+
+
+const POINT_CLOUD_PATH =
+    `${BASE_PATH}/point_cloud.ply`;
+
+
+const METADATA_PATH =
+    `${BASE_PATH}/reconstruction3d_meta.json`;
+
+
+
+/* ============================================================
+   DOM
+============================================================ */
+
+
+const container =
+    document.getElementById(
+        "viewer"
+    );
+
+
+const modeElement =
+    document.getElementById(
+        "mode"
+    );
+
+
+const geometryTypeElement =
+    document.getElementById(
+        "geometryType"
+    );
+
+
+const pointCountElement =
+    document.getElementById(
+        "pointCount"
+    );
+
+
+const meshVertexCountElement =
+    document.getElementById(
+        "meshVertexCount"
+    );
+
+
+const meshTriangleCountElement =
+    document.getElementById(
+        "meshTriangleCount"
+    );
+
+
+const heightRangeElement =
+    document.getElementById(
+        "heightRange"
+    );
+
+
+const pixelSizeElement =
+    document.getElementById(
+        "pixelSize"
+    );
+
+
+const crsElement =
+    document.getElementById(
+        "crs"
+    );
+
+
+const statusElement =
+    document.getElementById(
+        "status"
+    );
+
+
+const errorElement =
+    document.getElementById(
+        "error"
+    );
+
+
+const dhSlider =
+    document.getElementById(
+        "dh"
+    );
+
+
+const dwSlider =
+    document.getElementById(
+        "dw"
+    );
+
+
+const maxZSlider =
+    document.getElementById(
+        "maxZ"
+    );
+
+
+const dhValue =
+    document.getElementById(
+        "dhValue"
+    );
+
+
+const dwValue =
+    document.getElementById(
+        "dwValue"
+    );
+
+
+const maxZValue =
+    document.getElementById(
+        "maxZValue"
+    );
+
+
+const kxValue =
+    document.getElementById(
+        "kxValue"
+    );
+
+
+const kyValue =
+    document.getElementById(
+        "kyValue"
+    );
+
+
+const surfaceButton =
+    document.getElementById(
+        "surfaceButton"
+    );
+
+
+const pointButton =
+    document.getElementById(
+        "pointButton"
+    );
+
+
+const gridToggle =
+    document.getElementById(
+        "gridToggle"
+    );
+
+
+const enterFlyButton =
+    document.getElementById(
+        "enterFly"
+    );
+
+
+const resetViewButton =
+    document.getElementById(
+        "resetView"
+    );
+
+
+const resetTransformButton =
+    document.getElementById(
+        "resetTransform"
+    );
+
+
+
+/* ============================================================
+   Scene
+============================================================ */
+
+
+const scene =
+    new THREE.Scene();
+
+
+scene.background =
+    new THREE.Color(
+        0x34373c
+    );
+
+
+
+/* ============================================================
+   Camera
+============================================================ */
+
+
+const camera =
+    new THREE.PerspectiveCamera(
+
+        60,
+
+        window.innerWidth /
+        window.innerHeight,
+
+        0.05,
+
+        50000
+
+    );
+
+
+camera.position.set(
+    120,
+    90,
+    120
+);
+
+
+
+/* ============================================================
+   Renderer
+============================================================ */
+
+
+const renderer =
+    new THREE.WebGLRenderer({
+
+        antialias:
+            true
+
+    });
+
+
+renderer.setPixelRatio(
+
+    Math.min(
+        window.devicePixelRatio,
+        2
+    )
+
+);
+
+
+renderer.setSize(
+
+    window.innerWidth,
+
+    window.innerHeight
+
+);
+
+
+renderer.outputColorSpace =
+    THREE.SRGBColorSpace;
+
+
+container.appendChild(
+    renderer.domElement
+);
+
+
+
+/* ============================================================
+   Orbit
+============================================================ */
+
+
+const orbit =
+    new OrbitControls(
+
+        camera,
+
+        renderer.domElement
+
+    );
+
+
+orbit.enableDamping =
+    true;
+
+
+orbit.dampingFactor =
+    0.06;
+
+
+orbit.screenSpacePanning =
+    true;
+
+
+
+/* ============================================================
+   Fly
+============================================================ */
+
+
+const fly =
+    new PointerLockControls(
+
+        camera,
+
+        renderer.domElement
+
+    );
+
+
+fly.enabled =
+    false;
+
+
+let flyMode =
+    false;
+
+
+const keys = {};
+
+
+window.addEventListener(
+    "keydown",
+    event => {
+
+        keys[event.code] =
+            true;
+
+
+        if (
+            event.code === "Escape"
+            &&
+            flyMode
+        ) {
+
+            fly.unlock();
+
+        }
+
+    }
+);
+
+
+window.addEventListener(
+    "keyup",
+    event => {
+
+        keys[event.code] =
+            false;
+
+    }
+);
+
+
+
+/* ============================================================
+   Global reconstruction state
+============================================================ */
+
+
+/*
+ * IMPORTANT:
+ * metadata must be global because multiple functions use it.
+ */
+
+let metadata =
+    null;
+
+
+/*
+ * Current live controls.
+ */
+
+let currentDH =
+    0;
+
+
+let currentDW =
+    0;
+
+
+let currentMaxZ =
+    100;
+
+
+/*
+ * Saved transformation parameters.
+ */
+
+let sourceDH =
+    0;
+
+
+let sourceDW =
+    0;
+
+
+let sourceMaxZ =
+    100;
+
+
+let sourceKx =
+    0;
+
+
+let sourceKy =
+    0;
+
+
+/*
+ * Raster pixel dimensions.
+ */
+
+let pixelSizeX =
+    1;
+
+
+let pixelSizeY =
+    1;
+
+
+/*
+ * Canonical grid dimensions.
+ */
+
+let gridWidth =
+    0;
+
+
+let gridHeight =
+    0;
+
+
+/*
+ * Base reference coordinates.
+ */
+
+let pointBaseRow =
+    null;
+
+
+let pointBaseColumn =
+    null;
+
+
+let pointHeight100 =
+    null;
+
+
+/*
+ * RGB data.
+ */
+
+let pointColors =
+    null;
+
+
+/*
+ * Geometries.
+ */
+
+let pointGeometry =
+    null;
+
+
+let surfaceGeometry =
+    null;
+
+
+/*
+ * Render objects.
+ */
+
+let pointCloud =
+    null;
+
+
+let surfaceMesh =
+    null;
+
+
+/*
+ * Exact mapping from surface vertex to point vertex.
+ */
+
+let surfaceSourceIndex =
+    null;
+
+
+/*
+ * Grid.
+ */
+
+let groundGrid =
+    null;
+
+
+let gridEnabled =
+    true;
+
+
+/*
+ * Current mode.
+ */
+
+let activeMode =
+    "surface";
+
+
+/*
+ * Saved camera state.
+ */
+
+let initialCameraPosition =
+    new THREE.Vector3();
+
+
+let initialTarget =
+    new THREE.Vector3();
+
+
+
+/* ============================================================
+   Error
+============================================================ */
+
+
+function showError(
+    error
+) {
+
+    const message =
+        error?.stack
+        ||
+        error?.message
+        ||
+        String(error);
+
+
+    console.error(
+        message
+    );
+
+
+    errorElement.textContent =
+        message;
+
+
+    errorElement.style.display =
+        "block";
+
+
+    statusElement.textContent =
+        "Error";
+
+}
+
+
+
+/* ============================================================
+   Load JSON
+============================================================ */
+
+
+async function loadJSON(
+    path
+) {
+
+    const response =
+        await fetch(
+
+            path,
+
+            {
+                cache:
+                    "no-store"
+            }
+
+        );
+
+
+    if (
+        !response.ok
+    ) {
+
+        throw new Error(
+
+            `Failed to load ${path} ` +
+            `(${response.status})`
+
+        );
+
+    }
+
+
+    return await response.json();
+
+}
+
+
+
+/* ============================================================
+   Load PLY
+============================================================ */
+
+
+function loadPLY(
+    path
+) {
+
+    return new Promise(
+
+        (
+            resolve,
+            reject
+        ) => {
+
+            const loader =
+                new PLYLoader();
+
+
+            loader.load(
+
+                path,
+
+                geometry => {
+
+                    resolve(
+                        geometry
+                    );
+
+                },
+
+                undefined,
+
+                error => {
+
+                    console.error(
+                        error
+                    );
+
+
+                    reject(
+
+                        new Error(
+
+                            `Failed to load PLY: ${path}`
+
+                        )
+
+                    );
+
+                }
+
+            );
+
+        }
+
+    );
+
+}
+
+
+
+/* ============================================================
+   Safe metadata number lookup
+============================================================ */
+
+
+function readNumber(
+    object,
+    paths,
+    fallback
+) {
+
+    for (
+        const path
+        of paths
+    ) {
+
+        let value =
+            object;
+
+
+        for (
+            const key
+            of path
+        ) {
+
+            if (
+                value === null
+                ||
+                value === undefined
+            ) {
+
+                value =
+                    undefined;
+
+                break;
+
+            }
+
+
+            value =
+                value[key];
+
+        }
+
+
+        const number =
+            Number(
+                value
+            );
+
+
+        if (
+            Number.isFinite(
+                number
+            )
+        ) {
+
+            return number;
+
+        }
+
+    }
+
+
+    return fallback;
+
+}
+
+
+
+/* ============================================================
+   Recover point reference coordinates
+============================================================ */
+
+
+function recoverReferenceCoordinates() {
+
+    const position =
+        pointGeometry
+            .attributes
+            .position;
+
+
+    const count =
+        position.count;
+
+
+    const values =
+        position.array;
+
+
+    pointBaseRow =
+        new Float32Array(
+            count
+        );
+
+
+    pointBaseColumn =
+        new Float32Array(
+            count
+        );
+
+
+    pointHeight100 =
+        new Float32Array(
+            count
+        );
+
+
+    /*
+     * PLY convention from reconstruction3d.py:
+     *
+     * X = transformed row
+     * Y = transformed column
+     * Z = transformed/output height
+     *
+     * Recover base row/column so that the exact same reference
+     * transformation can be applied again.
+     */
+
+    for (
+        let i = 0;
+        i < count;
+        i++
+    ) {
+
+        const p =
+            i * 3;
+
+
+        const transformedRow =
+            values[p];
+
+
+        const transformedColumn =
+            values[p + 1];
+
+
+        const height =
+            values[p + 2];
+
+
+        const h100 =
+            THREE.MathUtils.clamp(
+
+                (
+                    height /
+                    sourceMaxZ
+                ) * 100.0,
+
+                0,
+                100
+
+            );
+
+
+        pointHeight100[i] =
+            h100;
+
+
+        pointBaseRow[i] =
+            transformedRow
+            -
+            sourceKx *
+            h100;
+
+
+        pointBaseColumn[i] =
+            transformedColumn
+            -
+            sourceKy *
+            h100;
+
+    }
+
+
+    /*
+     * Preserve colors from the PLY.
+     */
+
+    if (
+        pointGeometry.hasAttribute(
+            "color"
+        )
+    ) {
+
+        pointColors =
+            new Float32Array(
+
+                pointGeometry
+                    .attributes
+                    .color
+                    .array
+
+            );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   Build raster lookup
+============================================================ */
+
+
+function buildSurfaceLookup() {
+
+    const pointCount =
+        pointBaseRow.length;
+
+
+    gridWidth =
+        Math.round(
+
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "grid",
+                        "width"
+                    ],
+
+                    [
+                        "width"
+                    ]
+
+                ],
+
+                0
+
+            )
+
+        );
+
+
+    gridHeight =
+        Math.round(
+
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "grid",
+                        "height"
+                    ],
+
+                    [
+                        "height"
+                    ]
+
+                ],
+
+                0
+
+            )
+
+        );
+
+
+    /*
+     * Fallback dimensions.
+     */
+
+    if (
+        gridWidth <= 0
+        ||
+        gridHeight <= 0
+    ) {
+
+        let maxRow =
+            0;
+
+
+        let maxColumn =
+            0;
+
+
+        for (
+            let i = 0;
+            i < pointCount;
+            i++
+        ) {
+
+            maxRow =
+                Math.max(
+                    maxRow,
+                    pointBaseRow[i]
+                );
+
+
+            maxColumn =
+                Math.max(
+                    maxColumn,
+                    pointBaseColumn[i]
+                );
+
+        }
+
+
+        gridHeight =
+            Math.round(
+                maxRow
+            ) + 1;
+
+
+        gridWidth =
+            Math.round(
+                maxColumn
+            ) + 1;
+
+    }
+
+
+    const expected =
+        gridWidth *
+        gridHeight;
+
+
+    surfaceSourceIndex =
+        new Int32Array(
+            expected
+        );
+
+
+    surfaceSourceIndex.fill(
+        -1
+    );
+
+
+    for (
+        let i = 0;
+        i < pointCount;
+        i++
+    ) {
+
+        const row =
+            Math.round(
+                pointBaseRow[i]
+            );
+
+
+        const column =
+            Math.round(
+                pointBaseColumn[i]
+            );
+
+
+        if (
+            row < 0
+            ||
+            row >= gridHeight
+            ||
+            column < 0
+            ||
+            column >= gridWidth
+        ) {
+
+            continue;
+
+        }
+
+
+        const slot =
+            row *
+            gridWidth
+            +
+            column;
+
+
+        if (
+            surfaceSourceIndex[slot]
+            < 0
+        ) {
+
+            surfaceSourceIndex[slot] =
+                i;
+
+        }
+
+    }
+
+
+    /*
+     * Check coverage.
+     */
+
+    let filled =
+        0;
+
+
+    for (
+        let i = 0;
+        i < expected;
+        i++
+    ) {
+
+        if (
+            surfaceSourceIndex[i]
+            >= 0
+        ) {
+
+            filled++;
+
+        }
+
+    }
+
+
+    /*
+     * For the normal GeoSculpt canonical raster this should be
+     * effectively complete.
+     */
+
+    if (
+        filled <
+        expected * 0.98
+    ) {
+
+        console.warn(
+
+            "Surface grid lookup coverage:",
+            `${filled}/${expected}`
+
+        );
+
+
+        /*
+         * Only use sequential fallback when the number of points
+         * actually matches the expected raster size.
+         */
+
+        if (
+            pointCount === expected
+        ) {
+
+            for (
+                let i = 0;
+                i < expected;
+                i++
+            ) {
+
+                surfaceSourceIndex[i] =
+                    i;
+
+            }
+
+        }
+
+    }
+
+}
+
+
+
+/* ============================================================
+   Create continuous surface geometry
+============================================================ */
+
+
+function createSurfaceGeometry() {
+
+    const vertexCount =
+        gridWidth *
+        gridHeight;
+
+
+    const positions =
+        new Float32Array(
+            vertexCount * 3
+        );
+
+
+    let colors =
+        null;
+
+
+    if (
+        pointColors !== null
+    ) {
+
+        colors =
+            new Float32Array(
+                vertexCount * 3
+            );
+
+    }
+
+
+    /*
+     * Surface vertices correspond directly to point-cloud
+     * vertices.
+     */
+
+    for (
+        let i = 0;
+        i < vertexCount;
+        i++
+    ) {
+
+        const sourceIndex =
+            surfaceSourceIndex[i];
+
+
+        const p =
+            i * 3;
+
+
+        if (
+            sourceIndex < 0
+        ) {
+
+            positions[p] =
+                0;
+
+
+            positions[p + 1] =
+                0;
+
+
+            positions[p + 2] =
+                0;
+
+
+            if (
+                colors !== null
+            ) {
+
+                colors[p] =
+                    0.4;
+
+
+                colors[p + 1] =
+                    0.4;
+
+
+                colors[p + 2] =
+                    0.4;
+
+            }
+
+
+            continue;
+
+        }
+
+
+        if (
+            colors !== null
+        ) {
+
+            const sourceP =
+                sourceIndex * 3;
+
+
+            colors[p] =
+                pointColors[sourceP];
+
+
+            colors[p + 1] =
+                pointColors[
+                    sourceP + 1
+                ];
+
+
+            colors[p + 2] =
+                pointColors[
+                    sourceP + 2
+                ];
+
+        }
+
+    }
+
+
+    /*
+     * Two triangles per grid cell.
+     */
+
+    const estimatedTriangles =
+        Math.max(
+            0,
+            gridWidth - 1
+        )
+        *
+        Math.max(
+            0,
+            gridHeight - 1
+        )
+        *
+        2;
+
+
+    const IndexArray =
+        vertexCount > 65535
+            ? Uint32Array
+            : Uint16Array;
+
+
+    const indices =
+        new IndexArray(
+            estimatedTriangles * 3
+        );
+
+
+    let offset =
+        0;
+
+
+    for (
+        let row = 0;
+        row < gridHeight - 1;
+        row++
+    ) {
+
+        for (
+            let column = 0;
+            column < gridWidth - 1;
+            column++
+        ) {
+
+            const topLeft =
+                row *
+                gridWidth
+                +
+                column;
+
+
+            const topRight =
+                topLeft + 1;
+
+
+            const bottomLeft =
+                (
+                    row + 1
+                )
+                *
+                gridWidth
+                +
+                column;
+
+
+            const bottomRight =
+                bottomLeft + 1;
+
+
+            const validTopLeft =
+                surfaceSourceIndex[
+                    topLeft
+                ] >= 0;
+
+
+            const validTopRight =
+                surfaceSourceIndex[
+                    topRight
+                ] >= 0;
+
+
+            const validBottomLeft =
+                surfaceSourceIndex[
+                    bottomLeft
+                ] >= 0;
+
+
+            const validBottomRight =
+                surfaceSourceIndex[
+                    bottomRight
+                ] >= 0;
+
+
+            /*
+             * Triangle 1.
+             */
+
+            if (
+                validTopLeft
+                &&
+                validBottomLeft
+                &&
+                validTopRight
+            ) {
+
+                indices[offset++] =
+                    topLeft;
+
+
+                indices[offset++] =
+                    bottomLeft;
+
+
+                indices[offset++] =
+                    topRight;
+
+            }
+
+
+            /*
+             * Triangle 2.
+             */
+
+            if (
+                validTopRight
+                &&
+                validBottomRight
+                &&
+                validBottomLeft
+            ) {
+
+                indices[offset++] =
+                    topRight;
+
+
+                indices[offset++] =
+                    bottomRight;
+
+
+                indices[offset++] =
+                    bottomLeft;
+
+            }
+
+        }
+
+    }
+
+
+    const finalIndices =
+        offset === indices.length
+
+            ? indices
+
+            : indices.slice(
+                0,
+                offset
+            );
+
+
+    surfaceGeometry =
+        new THREE.BufferGeometry();
+
+
+    surfaceGeometry.setAttribute(
+
+        "position",
+
+        new THREE.BufferAttribute(
+
+            positions,
+
+            3
+
+        )
+
+    );
+
+
+    if (
+        colors !== null
+    ) {
+
+        surfaceGeometry.setAttribute(
+
+            "color",
+
+            new THREE.BufferAttribute(
+
+                colors,
+
+                3
+
+            )
+
+        );
+
+    }
+
+
+    surfaceGeometry.setIndex(
+
+        new THREE.BufferAttribute(
+
+            finalIndices,
+
+            1
+
+        )
+
+    );
+
+
+    surfaceGeometry.computeVertexNormals();
+
+}
+
+
+
+/* ============================================================
+   Apply shared coordinates
+============================================================ */
+
+
+function updateSharedPositions() {
+
+    if (
+        pointBaseRow === null
+        ||
+        pointBaseColumn === null
+        ||
+        pointHeight100 === null
+    ) {
+
+        return;
+
+    }
+
+
+    const pointPosition =
+        pointGeometry
+            .attributes
+            .position;
+
+
+    const pointValues =
+        pointPosition.array;
+
+
+    const pointCount =
+        pointPosition.count;
+
+
+    const kx =
+        currentDH /
+        100.0;
+
+
+    const ky =
+        currentDW /
+        100.0;
+
+
+    let minX =
+        Infinity;
+
+
+    let maxX =
+        -Infinity;
+
+
+    let minY =
+        Infinity;
+
+
+    let minZ =
+        Infinity;
+
+
+    let maxZ =
+        -Infinity;
+
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 1
+     * Calculate point-cloud coordinates.
+     * ---------------------------------------------------------
+     */
+
+    for (
+        let i = 0;
+        i < pointCount;
+        i++
+    ) {
+
+        const h =
+            pointHeight100[i];
+
+
+        const row =
+            pointBaseRow[i]
+            +
+            kx * h;
+
+
+        const column =
+            pointBaseColumn[i]
+            +
+            ky * h;
+
+
+        const height =
+            currentMaxZ *
+            h /
+            100.0;
+
+
+        const x =
+            column *
+            pixelSizeX;
+
+
+        const y =
+            height;
+
+
+        const z =
+            -row *
+            pixelSizeY;
+
+
+        const p =
+            i * 3;
+
+
+        pointValues[p] =
+            x;
+
+
+        pointValues[p + 1] =
+            y;
+
+
+        pointValues[p + 2] =
+            z;
+
+
+        minX =
+            Math.min(
+                minX,
+                x
+            );
+
+
+        maxX =
+            Math.max(
+                maxX,
+                x
+            );
+
+
+        minY =
+            Math.min(
+                minY,
+                y
+            );
+
+
+        minZ =
+            Math.min(
+                minZ,
+                z
+            );
+
+
+        maxZ =
+            Math.max(
+                maxZ,
+                z
+            );
+
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 2
+     * Center the complete point cloud.
+     * ---------------------------------------------------------
+     */
+
+    const centerX =
+        (
+            minX +
+            maxX
+        ) * 0.5;
+
+
+    const centerZ =
+        (
+            minZ +
+            maxZ
+        ) * 0.5;
+
+
+    for (
+        let i = 0;
+        i < pointCount;
+        i++
+    ) {
+
+        const p =
+            i * 3;
+
+
+        pointValues[p] -=
+            centerX;
+
+
+        pointValues[p + 1] -=
+            minY;
+
+
+        pointValues[p + 2] -=
+            centerZ;
+
+    }
+
+
+    pointPosition.needsUpdate =
+        true;
+
+
+    pointGeometry.computeBoundingBox();
+
+    pointGeometry.computeBoundingSphere();
+
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 3
+     * Create Surface vertices from the EXACT SAME
+     * point-cloud coordinates.
+     * ---------------------------------------------------------
+     */
+
+    const surfacePosition =
+        surfaceGeometry
+            .attributes
+            .position;
+
+
+    const surfaceValues =
+        surfacePosition.array;
+
+
+    const surfaceVertexCount =
+        surfacePosition.count;
+
+
+    for (
+        let i = 0;
+        i < surfaceVertexCount;
+        i++
+    ) {
+
+        const sourceIndex =
+            surfaceSourceIndex[i];
+
+
+        const p =
+            i * 3;
+
+
+        if (
+            sourceIndex < 0
+        ) {
+
+            surfaceValues[p] =
+                0;
+
+
+            surfaceValues[p + 1] =
+                0;
+
+
+            surfaceValues[p + 2] =
+                0;
+
+
+            continue;
+
+        }
+
+
+        const sourceP =
+            sourceIndex * 3;
+
+
+        surfaceValues[p] =
+            pointValues[
+                sourceP
+            ];
+
+
+        surfaceValues[p + 1] =
+            pointValues[
+                sourceP + 1
+            ];
+
+
+        surfaceValues[p + 2] =
+            pointValues[
+                sourceP + 2
+            ];
+
+    }
+
+
+    surfacePosition.needsUpdate =
+        true;
+
+
+    surfaceGeometry.computeVertexNormals();
+
+    surfaceGeometry.computeBoundingBox();
+
+    surfaceGeometry.computeBoundingSphere();
+
+}
+
+
+
+/* ============================================================
+   Create point cloud renderer
+============================================================ */
+
+
+function createPointCloud() {
+
+    const hasColors =
+        pointGeometry.hasAttribute(
+            "color"
+        );
+
+
+    const material =
+        new THREE.PointsMaterial({
+
+            size:
+                Math.max(
+
+                    Math.min(
+                        pixelSizeX,
+                        pixelSizeY
+                    ) * 0.65,
+
+                    0.12
+
+                ),
+
+            sizeAttenuation:
+                true,
+
+            vertexColors:
+                hasColors,
+
+            transparent:
+                true,
+
+            opacity:
+                0.96
+
+        });
+
+
+    pointCloud =
+        new THREE.Points(
+
+            pointGeometry,
+
+            material
+
+        );
+
+
+    /*
+     * No rotation.
+     */
+
+    pointCloud.rotation.set(
+        0,
+        0,
+        0
+    );
+
+
+    pointCloud.scale.set(
+        1,
+        1,
+        1
+    );
+
+
+    scene.add(
+        pointCloud
+    );
+
+}
+
+
+
+/* ============================================================
+   Create surface renderer
+============================================================ */
+
+
+function createSurfaceMesh() {
+
+    const hasColors =
+        surfaceGeometry.hasAttribute(
+            "color"
+        );
+
+
+    const material =
+        new THREE.MeshStandardMaterial({
+
+            vertexColors:
+                hasColors,
+
+            side:
+                THREE.DoubleSide,
+
+            roughness:
+                0.92,
+
+            metalness:
+                0.0,
+
+            flatShading:
+                false
+
+        });
+
+
+    surfaceMesh =
+        new THREE.Mesh(
+
+            surfaceGeometry,
+
+            material
+
+        );
+
+
+    /*
+     * NO ROTATION.
+     *
+     * The geometry already has the exact same coordinates as
+     * the point cloud.
+     */
+
+    surfaceMesh.rotation.set(
+        0,
+        0,
+        0
+    );
+
+
+    surfaceMesh.scale.set(
+        1,
+        1,
+        1
+    );
+
+
+    scene.add(
+        surfaceMesh
+    );
+
+}
+
+
+
+/* ============================================================
+   Rebuild grid
+============================================================ */
+
+
+function rebuildGroundGrid() {
+
+    /*
+     * Remove existing grid.
+     */
+
+    if (
+        groundGrid !== null
+    ) {
+
+        scene.remove(
+            groundGrid
+        );
+
+
+        groundGrid =
+            null;
+
+    }
+
+
+    /*
+     * User turned grid OFF.
+     */
+
+    if (
+        !gridEnabled
+    ) {
+
+        return;
+
+    }
+
+
+    const geometry =
+        activeMode === "surface"
+        ? surfaceGeometry
+        : pointGeometry;
+
+
+    if (
+        geometry === null
+    ) {
+
+        return;
+
+    }
+
+
+    geometry.computeBoundingBox();
+
+
+    const box =
+        geometry.boundingBox;
+
+
+    const width =
+        Math.max(
+
+            box.max.x -
+            box.min.x,
+
+            10
+
+        );
+
+
+    const depth =
+        Math.max(
+
+            box.max.z -
+            box.min.z,
+
+            10
+
+        );
+
+
+    const size =
+        Math.max(
+            width,
+            depth,
+            50
+        );
+
+
+    const divisions =
+        Math.max(
+
+            10,
+
+            Math.min(
+
+                100,
+
+                Math.round(
+                    size / 5
+                )
+
+            )
+
+        );
+
+
+    groundGrid =
+        new THREE.GridHelper(
+
+            size * 1.08,
+
+            divisions
+
+        );
+
+
+    groundGrid.position.y =
+        0;
+
+
+    scene.add(
+        groundGrid
+    );
+
+}
+
+
+
+/* ============================================================
+   Frame camera
+============================================================ */
+
+
+function frameCamera(
+    remember = false
+) {
+
+    const geometry =
+        activeMode === "surface"
+        ? surfaceGeometry
+        : pointGeometry;
+
+
+    if (
+        geometry === null
+    ) {
+
+        return;
+
+    }
+
+
+    geometry.computeBoundingBox();
+
+    geometry.computeBoundingSphere();
+
+
+    const box =
+        geometry.boundingBox;
+
+
+    const sphere =
+        geometry.boundingSphere;
+
+
+    const width =
+        box.max.x -
+        box.min.x;
+
+
+    const depth =
+        box.max.z -
+        box.min.z;
+
+
+    const horizontal =
+        Math.max(
+            width,
+            depth,
+            20
+        );
+
+
+    const radius =
+        Math.max(
+            sphere.radius,
+            horizontal * 0.5,
+            20
+        );
+
+
+    const distance =
+        Math.max(
+            horizontal * 0.9,
+            80
+        );
+
+
+    camera.position.set(
+
+        distance,
+
+        Math.max(
+            radius * 0.55,
+            30
+        ),
+
+        distance
+
+    );
+
+
+    orbit.target.set(
+
+        0,
+
+        Math.max(
+            box.max.y * 0.18,
+            2
+        ),
+
+        0
+
+    );
+
+
+    orbit.minDistance =
+        Math.max(
+            2,
+            horizontal * 0.01
+        );
+
+
+    orbit.maxDistance =
+        Math.max(
+            1000,
+            horizontal * 10
+        );
+
+
+    orbit.update();
+
+
+    if (
+        remember
+    ) {
+
+        initialCameraPosition.copy(
+            camera.position
+        );
+
+
+        initialTarget.copy(
+            orbit.target
+        );
+
+    }
+
+}
+
+
+
+/* ============================================================
+   HUD
+============================================================ */
+
+
+function updateHUD() {
+
+    const kx =
+        currentDH /
+        100.0;
+
+
+    const ky =
+        currentDW /
+        100.0;
+
+
+    dhValue.textContent =
+        `${currentDH.toFixed(0)} px`;
+
+
+    dwValue.textContent =
+        `${currentDW.toFixed(0)} px`;
+
+
+    maxZValue.textContent =
+        `${currentMaxZ.toFixed(1)} m`;
+
+
+    kxValue.textContent =
+        kx.toFixed(4);
+
+
+    kyValue.textContent =
+        ky.toFixed(4);
+
+
+    if (
+        activeMode === "surface"
+    ) {
+
+        modeElement.textContent =
+            "Surface";
+
+
+        geometryTypeElement.textContent =
+            "Continuous Height Surface";
+
+    }
+    else {
+
+        modeElement.textContent =
+            "Point Cloud";
+
+
+        geometryTypeElement.textContent =
+            "Reference Point Cloud";
+
+    }
+
+}
+
+
+
+/* ============================================================
+   Apply controls
+============================================================ */
+
+
+function applyTransform() {
+
+    currentDH =
+        Number(
+            dhSlider.value
+        );
+
+
+    currentDW =
+        Number(
+            dwSlider.value
+        );
+
+
+    currentMaxZ =
+        Number(
+            maxZSlider.value
+        );
+
+
+    updateSharedPositions();
+
+
+    updateHUD();
+
+
+    rebuildGroundGrid();
+
+}
+
+
+
+/* ============================================================
+   Slider throttling
+============================================================ */
+
+
+let transformQueued =
+    false;
+
+
+function queueTransform() {
+
+    if (
+        transformQueued
+    ) {
+
+        return;
+
+    }
+
+
+    transformQueued =
+        true;
+
+
+    requestAnimationFrame(
+        () => {
+
+            transformQueued =
+                false;
+
+            applyTransform();
+
+        }
+    );
+
+}
+
+
+dhSlider.addEventListener(
+    "input",
+    queueTransform
+);
+
+
+dwSlider.addEventListener(
+    "input",
+    queueTransform
+);
+
+
+maxZSlider.addEventListener(
+    "input",
+    queueTransform
+);
+
+
+
+/* ============================================================
+   Surface / Point Cloud mode
+============================================================ */
+
+
+function setMode(
+    mode
+) {
+
+    activeMode =
+        mode;
+
+
+    if (
+        pointCloud !== null
+    ) {
+
+        pointCloud.visible =
+            mode === "point";
+
+    }
+
+
+    if (
+        surfaceMesh !== null
+    ) {
+
+        surfaceMesh.visible =
+            mode === "surface";
+
+    }
+
+
+    surfaceButton.classList.toggle(
+
+        "mode-active",
+
+        mode === "surface"
+
+    );
+
+
+    pointButton.classList.toggle(
+
+        "mode-active",
+
+        mode === "point"
+
+    );
+
+
+    updateHUD();
+
+
+    rebuildGroundGrid();
+
+
+    frameCamera(
+        false
+    );
+
+
+    statusElement.textContent =
+        mode === "surface"
+        ? "Surface mode"
+        : "Point-cloud mode";
+
+}
+
+
+surfaceButton.addEventListener(
+    "click",
+    () => {
+
+        setMode(
+            "surface"
+        );
+
+    }
+);
+
+
+pointButton.addEventListener(
+    "click",
+    () => {
+
+        setMode(
+            "point"
+        );
+
+    }
+);
+
+
+
+/* ============================================================
+   Grid ON / OFF
+============================================================ */
+
+
+gridToggle.addEventListener(
+    "click",
+    () => {
+
+        gridEnabled =
+            !gridEnabled;
+
+
+        gridToggle.textContent =
+            gridEnabled
+            ? "Grid: ON"
+            : "Grid: OFF";
+
+
+        rebuildGroundGrid();
+
+
+        statusElement.textContent =
+            gridEnabled
+            ? "Grid enabled"
+            : "Grid disabled";
+
+    }
+);
+
+
+
+/* ============================================================
+   Reset transform
+============================================================ */
+
+
+resetTransformButton.addEventListener(
+    "click",
+    () => {
+
+        currentDH =
+            0;
+
+
+        currentDW =
+            0;
+
+
+        currentMaxZ =
+            Math.min(
+
+                256,
+
+                Math.max(
+                    1,
+                    Math.round(
+                        sourceMaxZ
+                    )
+                )
+
+            );
+
+
+        dhSlider.value =
+            "0";
+
+
+        dwSlider.value =
+            "0";
+
+
+        maxZSlider.value =
+            String(
+                Math.round(
+                    currentMaxZ
+                )
+            );
+
+
+        applyTransform();
+
+
+        statusElement.textContent =
+            "Reference transform reset";
+
+    }
+);
+
+
+
+/* ============================================================
+   Reset camera
+============================================================ */
+
+
+resetViewButton.addEventListener(
+    "click",
+    () => {
+
+        camera.position.copy(
+            initialCameraPosition
+        );
+
+
+        orbit.target.copy(
+            initialTarget
+        );
+
+
+        orbit.update();
+
+
+        statusElement.textContent =
+            "Camera reset";
+
+    }
+);
+
+
+
+/* ============================================================
+   Fly mode
+============================================================ */
+
+
+enterFlyButton.addEventListener(
+    "click",
+    () => {
+
+        fly.enabled =
+            true;
+
+
+        fly.lock();
+
+    }
+);
+
+
+fly.addEventListener(
+    "lock",
+    () => {
+
+        flyMode =
+            true;
+
+
+        orbit.enabled =
+            false;
+
+
+        statusElement.textContent =
+            "Fly mode active";
+
+    }
+);
+
+
+fly.addEventListener(
+    "unlock",
+    () => {
+
+        flyMode =
+            false;
+
+
+        fly.enabled =
+            false;
+
+
+        orbit.enabled =
+            true;
+
+
+        statusElement.textContent =
+            "Orbit mode";
+
+    }
+);
+
+
+
+/* ============================================================
+   Fly movement
+============================================================ */
+
+
+const clock =
+    new THREE.Clock();
+
+
+function updateFly(
+    delta
+) {
+
+    if (
+        !flyMode
+    ) {
+
+        return;
+
+    }
+
+
+    let speed =
+        25;
+
+
+    if (
+        keys["ShiftLeft"]
+        ||
+        keys["ShiftRight"]
+    ) {
+
+        speed =
+            100;
+
+    }
+
+
+    const distance =
+        speed *
+        delta;
+
+
+    if (
+        keys["KeyW"]
+    ) {
+
+        fly.moveForward(
+            distance
+        );
+
+    }
+
+
+    if (
+        keys["KeyS"]
+    ) {
+
+        fly.moveForward(
+            -distance
+        );
+
+    }
+
+
+    if (
+        keys["KeyA"]
+    ) {
+
+        fly.moveRight(
+            -distance
+        );
+
+    }
+
+
+    if (
+        keys["KeyD"]
+    ) {
+
+        fly.moveRight(
+            distance
+        );
+
+    }
+
+
+    if (
+        keys["Space"]
+    ) {
+
+        camera.position.y +=
+            distance;
+
+    }
+
+
+    if (
+        keys["ControlLeft"]
+        ||
+        keys["ControlRight"]
+    ) {
+
+        camera.position.y -=
+            distance;
+
+    }
+
+
+    camera.position.y =
+        Math.max(
+            camera.position.y,
+            1
+        );
+
+}
+
+
+
+/* ============================================================
+   Initialize
+============================================================ */
+
+
+async function initialize() {
+
+    try {
+
+        statusElement.textContent =
+            "Loading metadata...";
+
+
+        metadata =
+            await loadJSON(
+                METADATA_PATH
+            );
+
+
+        statusElement.textContent =
+            "Loading point cloud...";
+
+
+        pointGeometry =
+            await loadPLY(
+                POINT_CLOUD_PATH
+            );
+
+
+        /* ----------------------------------------------------
+           Metadata
+        ---------------------------------------------------- */
+
+
+        pixelSizeX =
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "grid",
+                        "pixel_size_x_m"
+                    ],
+
+                    [
+                        "pixel_size_x"
+                    ],
+
+                    [
+                        "pixel_size_m"
+                    ]
+
+                ],
+
+                1
+
+            );
+
+
+        pixelSizeY =
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "grid",
+                        "pixel_size_y_m"
+                    ],
+
+                    [
+                        "pixel_size_y"
+                    ],
+
+                    [
+                        "pixel_size_m"
+                    ]
+
+                ],
+
+                1
+
+            );
+
+
+        sourceDH =
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "method",
+                        "dh"
+                    ],
+
+                    [
+                        "parameters",
+                        "dh"
+                    ],
+
+                    [
+                        "dh"
+                    ]
+
+                ],
+
+                0
+
+            );
+
+
+        sourceDW =
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "method",
+                        "dw"
+                    ],
+
+                    [
+                        "parameters",
+                        "dw"
+                    ],
+
+                    [
+                        "dw"
+                    ]
+
+                ],
+
+                0
+
+            );
+
+
+        sourceMaxZ =
+            readNumber(
+
+                metadata,
+
+                [
+
+                    [
+                        "method",
+                        "max_z"
+                    ],
+
+                    [
+                        "method",
+                        "maxZ"
+                    ],
+
+                    [
+                        "parameters",
+                        "max_z"
+                    ],
+
+                    [
+                        "parameters",
+                        "maxZ"
+                    ],
+
+                    [
+                        "max_z"
+                    ],
+
+                    [
+                        "maxZ"
+                    ]
+
+                ],
+
+                100
+
+            );
+
+
+        if (
+            !Number.isFinite(
+                sourceMaxZ
+            )
+            ||
+            sourceMaxZ <= 0
+        ) {
+
+            sourceMaxZ =
+                100;
+
+        }
+
+
+        sourceKx =
+            sourceDH /
+            100.0;
+
+
+        sourceKy =
+            sourceDW /
+            100.0;
+
+
+        /* ----------------------------------------------------
+           HUD
+        ---------------------------------------------------- */
+
+
+        pixelSizeElement.textContent =
+            `${pixelSizeX.toFixed(3)} × ` +
+            `${pixelSizeY.toFixed(3)} m`;
+
+
+        crsElement.textContent =
+            metadata.grid?.crs
+            ??
+            metadata.crs
+            ??
+            "not georeferenced";
+
+
+        heightRangeElement.textContent =
+            `0.00 → ${sourceMaxZ.toFixed(2)} m`;
+
+
+        /* ----------------------------------------------------
+           Recover point coordinates
+        ---------------------------------------------------- */
+
+
+        recoverReferenceCoordinates();
+
+
+        /* ----------------------------------------------------
+           Build surface lookup
+        ---------------------------------------------------- */
+
+
+        buildSurfaceLookup();
+
+
+        /* ----------------------------------------------------
+           Build surface
+        ---------------------------------------------------- */
+
+
+        createSurfaceGeometry();
+
+
+        /* ----------------------------------------------------
+           Render objects
+        ---------------------------------------------------- */
+
+
+        createPointCloud();
+
+
+        createSurfaceMesh();
+
+
+        /* ----------------------------------------------------
+           Lighting
+        ---------------------------------------------------- */
+
+
+        const hemisphere =
+            new THREE.HemisphereLight(
+
+                0xffffff,
+
+                0x303030,
+
+                1.8
+
+            );
+
+
+        scene.add(
+            hemisphere
+        );
+
+
+        const directional =
+            new THREE.DirectionalLight(
+
+                0xffffff,
+
+                2.2
+
+            );
+
+
+        directional.position.set(
+
+            200,
+            350,
+            150
+
+        );
+
+
+        scene.add(
+            directional
+        );
+
+
+        /* ----------------------------------------------------
+           Counts
+        ---------------------------------------------------- */
+
+
+        pointCountElement.textContent =
+            pointGeometry
+                .attributes
+                .position
+                .count
+                .toLocaleString();
+
+
+        meshVertexCountElement.textContent =
+            surfaceGeometry
+                .attributes
+                .position
+                .count
+                .toLocaleString();
+
+
+        meshTriangleCountElement.textContent =
+            surfaceGeometry.index
+                ? Math.floor(
+                    surfaceGeometry.index.count / 3
+                ).toLocaleString()
+                : "0";
+
+
+        /* ----------------------------------------------------
+           Initial control values
+        ---------------------------------------------------- */
+
+
+        currentDH =
+            0;
+
+
+        currentDW =
+            0;
+
+
+        currentMaxZ =
+            Math.min(
+
+                256,
+
+                Math.max(
+                    1,
+                    Math.round(
+                        sourceMaxZ
+                    )
+                )
+
+            );
+
+
+        dhSlider.value =
+            "0";
+
+
+        dwSlider.value =
+            "0";
+
+
+        maxZSlider.value =
+            String(
+                Math.round(
+                    currentMaxZ
+                )
+            );
+
+
+        /* ----------------------------------------------------
+           Apply same coordinates to both
+        ---------------------------------------------------- */
+
+
+        updateSharedPositions();
+
+
+        /* ----------------------------------------------------
+           Start in Surface mode
+        ---------------------------------------------------- */
+
+
+        activeMode =
+            "surface";
+
+
+        pointCloud.visible =
+            false;
+
+
+        surfaceMesh.visible =
+            true;
+
+
+        surfaceButton.classList.add(
+            "mode-active"
+        );
+
+
+        pointButton.classList.remove(
+            "mode-active"
+        );
+
+
+        /* ----------------------------------------------------
+           Grid ON by default
+        ---------------------------------------------------- */
+
+
+        gridEnabled =
+            true;
+
+
+        gridToggle.textContent =
+            "Grid: ON";
+
+
+        updateHUD();
+
+
+        rebuildGroundGrid();
+
+
+        frameCamera(
+            true
+        );
+
+
+        statusElement.textContent =
+            "Surface reconstruction ready";
+
+    }
+    catch (
+        error
+    ) {
+
+        showError(
+            error
+        );
+
+    }
+
+}
+
+
+initialize();
+
+
+
+/* ============================================================
+   Resize
+============================================================ */
+
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+
+            window.innerWidth,
+
+            window.innerHeight
+
+        );
+
+    }
+);
+
+
+
+/* ============================================================
+   Render
+============================================================ */
+
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    const delta =
+        Math.min(
+
+            clock.getDelta(),
+
+            0.05
+
+        );
+
+
+    if (
+        flyMode
+    ) {
+
+        updateFly(
+            delta
+        );
+
+    }
+    else {
+
+        orbit.update();
+
+    }
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+animate();
+
+
+</script>
+
+</body>
+
+</html>

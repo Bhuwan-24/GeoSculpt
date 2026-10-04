@@ -1,0 +1,10 @@
+numpy
+scipy
+rasterio
+pyproj
+affine
+pillow
+matplotlib
+opencv-python-headless
+torchvision
+open3d

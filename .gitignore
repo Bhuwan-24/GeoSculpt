@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated GeoSculpt outputs
+outputs/
+web_runs/
+
+# Large local test data
+data/phase2_gcp_test/
+
+# Local FABDEM cache
+data/dem_cache/
+
+# Large checkpoint - keep local for now
+# It will be uploaded to Hugging Face, not GitHub.
+models/best.pth
+
+# Logs / temporary files
+*.log
+*.tmp
+*.bak
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+!.env.example
+# Depth Anything demo assets
+external/Depth-Anything-V2/assets/
